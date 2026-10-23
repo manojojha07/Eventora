@@ -21,4 +21,5 @@ eventRouter.delete('/:id', protect, admin, deleteEvent);
 
 
 
+
 export default eventRouter;

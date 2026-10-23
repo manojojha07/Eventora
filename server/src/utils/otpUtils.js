@@ -1,16 +1,33 @@
 import nodemailer from 'nodemailer';
+import 'dotenv/config'
+
+
+console.log("EMAIL_USER:", process.env.EMAIL_USER);
+console.log("EMAIL_PASS:", process.env.EMAIL_PASS);
+
+
+
+
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
 });
+transporter.verify()
+    .then(() => {
+        console.log("Gmail SMTP connected successfully! ✅");
+    })
+    .catch((error) => {
+        console.error("Gmail SMTP error:", error.message);
+    });
 
 export const sendBookingEmail = async (userEmail, userName, eventTitle) => {
     try {
-        await transporter.sendMail({
+        //await transporter.sendMail({
+        const mailOption = ({
             from: process.env.EMAIL_USER,
             to: userEmail,
             subject: `Booking Confirmed: ${eventTitle}`,
@@ -28,6 +45,8 @@ export const sendBookingEmail = async (userEmail, userName, eventTitle) => {
                 </div>
             `,
         });
+                await transporter.sendMail(mailOption);
+
 
         console.log(`Booking confirmation email sent to ${userEmail}`);
     } catch (error) {
@@ -37,6 +56,10 @@ export const sendBookingEmail = async (userEmail, userName, eventTitle) => {
 };
 
 export const sendOtpEmail = async (userEmail, otp, type) => {
+     if (process.env.NODE_ENV !== 'production') {
+         console.log(`OTP for ${userEmail}: ${otp}`);
+         return true;
+     } 
     try {
         const title =
             type === 'account_verification'
@@ -48,7 +71,7 @@ export const sendOtpEmail = async (userEmail, otp, type) => {
                 ? 'Please use the following OTP to verify your new Eventora account.'
                 : 'Please use the following OTP to verify and confirm your event booking.';
 
-        await transporter.sendMail({
+           const mailOption = ({
             from: process.env.EMAIL_USER,
             to: userEmail,
             subject: title,
@@ -83,8 +106,8 @@ export const sendOtpEmail = async (userEmail, otp, type) => {
                 </div>
             `,
         });
+                await transporter.sendMail(mailOption);
 
-        console.log(`OTP email sent to ${userEmail}`);
     } catch (error) {
         console.error('Error sending OTP email:', error);
         throw error;

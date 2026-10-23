@@ -1,4 +1,5 @@
 
+import Event from "../models/eventModel.js";
 
 
 
@@ -14,36 +15,79 @@ export const createEvent = async (req, res) => {
             totalSeats,
             availableSeats,
             ticketPrice,
-            imageUrl
+            image
         } = req.body;
 
-
-        // create event on database
-        const event = new Event.create({
+        const event = await Event.create({
             title,
             description,
             date,
             location,
             category,
             totalSeats,
-            availableSeats,
+            availableSeats: availableSeats ?? totalSeats,
             ticketPrice,
-            imageUrl,
+            image: image || '',
+            createdBy: req.user._id
         });
 
-        return res.status(200).json({
+        return res.status(201).json({
             success: true,
-            message: "Event created successfully,"
-        })
+            message: 'Event created successfully',
+            event
+        });
 
     } catch (error) {
-        console.log("Error by create Event");
+        console.error('Create event error:', error);
+
         return res.status(500).json({
             success: false,
-            message: "Internal serverr error"
+            message: error.message || 'Internal server error'
         });
     }
-}
+};
+
+// export const createEvent = async (req, res) => {
+//     try {
+//         const {
+//             title,
+//             description,
+//             date,
+//             location,
+//             category,
+//             totalSeats,
+//             availableSeats,
+//             ticketPrice,
+//             image
+//         } = req.body;
+
+
+//         // create event on database
+//         const event = await Event.create({
+//             title,
+//             description,
+//             date,
+//             location,
+//             category,
+//             totalSeats,
+//             availableSeats,
+//             ticketPrice,
+//             image: image || ' ',
+//             createdBy: req.user.id
+//         });
+
+//         return res.status(200).json({
+//             success: true,
+//             message: "Event created successfully,",
+//             event
+//         })
+
+//     } catch (error) {
+//         console.log("Status:", error.response?.status);
+//         console.log("Backend error:", error.response?.data);
+//         console.log("Full error:", error);
+//     }
+// }
 
 export const updateEvent = async (req, res) => {
     try {
@@ -60,7 +104,7 @@ export const updateEvent = async (req, res) => {
             imageUrl
         } = req.body;
 
-        const event = await findByIdAndUpdate(id, {
+        const event = await Event.findByIdAndUpdate(id, {
             title,
             description,
             date,
@@ -70,18 +114,18 @@ export const updateEvent = async (req, res) => {
             availableSeats,
             ticketPrice,
             imageUrl
-        },{new:true});
-        
-        if(!event){
+        }, { new: true });
+
+        if (!event) {
             return res.status(404).json({
-                success:false,
-                message:"Event not found,"
+                success: false,
+                message: "Event not found,"
             })
         }
 
         return res.status(200).json({
-            success:true,
-            message:"Event updated successfully,",
+            success: true,
+            message: "Event updated successfully,",
             event
         });
 
@@ -94,31 +138,36 @@ export const updateEvent = async (req, res) => {
     }
 }
 
+
 export const getAllEvents = async (req, res) => {
     try {
-
         const filters = {};
+
         if (req.query.category) {
             filters.category = req.query.category;
         }
+
         if (req.query.location) {
-            filters.location = req.query.location
+            filters.location = req.query.location;
         }
 
-        const events = await Event.find({ filters }); //.limit(10)
+        const events = await Event.find(filters);
 
         return res.status(200).json({
             success: true,
             events
-        })
+        });
+
     } catch (error) {
-        console.log("Error while getting all Events ");
+        console.log("Error while getting all events:", error);
+
         return res.status(500).json({
             success: false,
-            message: "Internal serverr error"
+            message: "Internal server error"
         });
     }
-}
+};
+
 
 export const getEventById = async (req, res) => {
     try {

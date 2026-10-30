@@ -15,16 +15,42 @@ const Home = () => {
         return () => clearTimeout(timeoutId);
     }, [search]);
 
+
     const fetchEvents = async () => {
         try {
-            const { data } = await api.get(`/events?search=${search}`);
-            setEvents(data);
+            const { data } = await api.get(
+                `/events?search=${encodeURIComponent(search)}`
+            );
+
+
+
+            const eventsList = Array.isArray(data)
+                ? data
+                : Array.isArray(data.events)
+                    ? data.events
+                    : Array.isArray(data.data)
+                        ? data.data
+                        : Array.isArray(data.allEvents)
+                            ? data.allEvents
+                            : [];
+
+            setEvents(eventsList);
+            console.log("First event:", eventsList[0]);
+            console.log("Event ID:", eventsList[0]?._id);
+
+            
+
         } catch (error) {
-            console.error('Error fetching events:', error);
+            console.error("API error:", error.response?.status);
+            console.error("API error data:", error.response?.data || error.message);
+            setEvents([]);
         } finally {
             setLoading(false);
         }
     };
+
+
+
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -122,6 +148,9 @@ const Home = () => {
                                         <div className="bg-gray-700 h-2 rounded-full" style={{ width: `${(event.availableSeats / event.totalSeats) * 100}%` }}></div>
                                     </div>
                                     <p className="text-xs text-gray-500 mb-4">{event.availableSeats} of {event.totalSeats} seats remaining</p>
+
+
+
                                     <Link to={`/events/${event._id}`} className="block w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-2 rounded-lg transition">
                                         View Details
                                     </Link>

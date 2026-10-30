@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../Utils/axios';
+import api from '../utils/axios';
 import { AuthContext } from '../Context/AuthContext';
 import { FaCalendarAlt, FaMapMarkerAlt, FaChair, FaMoneyBillWave } from 'react-icons/fa';
 
@@ -17,7 +17,7 @@ const EventDetail = () => {
     const [successMsg, setSuccessMsg] = useState('');
 
     useEffect(() => {
-        const fetchEvent = async (id) => {
+        const fetchEvent = async () => {
             try {
                 const { data } = await api.get(`/events/${id}`);
                 setEvent(data);

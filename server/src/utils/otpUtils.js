@@ -10,11 +10,11 @@ console.log("EMAIL_PASS:", process.env.EMAIL_PASS);
 
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
+    service: "gmail",
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+    },
 });
 transporter.verify()
     .then(() => {
@@ -45,7 +45,7 @@ export const sendBookingEmail = async (userEmail, userName, eventTitle) => {
                 </div>
             `,
         });
-                await transporter.sendMail(mailOption);
+        await transporter.sendMail(mailOption);
 
 
         console.log(`Booking confirmation email sent to ${userEmail}`);
@@ -55,12 +55,18 @@ export const sendBookingEmail = async (userEmail, userName, eventTitle) => {
     }
 };
 
+
 export const sendOtpEmail = async (userEmail, otp, type) => {
-     if (process.env.NODE_ENV !== 'production') {
-         console.log(`OTP for ${userEmail}: ${otp}`);
-         return true;
-     } 
     try {
+        // Development mode: inspect arguments safely
+        if (process.env.NODE_ENV !== 'production') {
+            console.log("OTP email arguments:", {
+                userEmail,
+                otp,
+                type
+            });
+        }
+
         const title =
             type === 'account_verification'
                 ? 'Verify your Eventora Account'
@@ -71,45 +77,64 @@ export const sendOtpEmail = async (userEmail, otp, type) => {
                 ? 'Please use the following OTP to verify your new Eventora account.'
                 : 'Please use the following OTP to verify and confirm your event booking.';
 
-           const mailOption = ({
+        const mailOption = {
             from: process.env.EMAIL_USER,
             to: userEmail,
             subject: title,
             html: `
                 <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px;">
-                    
-                    <h2 style="color: #000;">
-                        ${title}
-                    </h2>
-
-                    <p style="color: #555; font-size: 16px;">
-                        ${msg}
-                    </p>
-
-                    <div style="
-                        margin: 20px auto;
-                        padding: 15px;
-                        font-size: 24px;
-                        font-weight: bold;
-                        background: #f4f4f4;
-                        width: max-content;
-                        letter-spacing: 5px;
-                    ">
+                    <h2>${title}</h2>
+                    <p>${msg}</p>
+                    <div style="margin: 20px auto; padding: 15px; font-size: 24px; font-weight: bold;">
                         ${otp}
                     </div>
-
-                    <p style="color: #999; font-size: 12px;">
-                        This code expires in 5 minutes.
-                        If you didn't request this, please ignore this email.
-                    </p>
-
+                    <p>This code expires in 5 minutes.</p>
                 </div>
-            `,
-        });
-                await transporter.sendMail(mailOption);
+            `
+        };
+
+        await transporter.sendMail(mailOption);
+        return true;
 
     } catch (error) {
-        console.error('Error sending OTP email:', error);
+        console.error("Error sending OTP email:", error.message);
         throw error;
     }
 };
+
+// export const sendOtpEmail = async (req, res) => {
+//   try {
+//     const email = req.user.email;
+
+//     if (!email) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "User email not found",
+//       });
+//     }
+
+//     // Generate OTP
+//     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+//     const mailOptions = {
+//       from: process.env.EMAIL_USER,
+//       to: email, // Email string, NOT req
+//       subject: "Your OTP",
+//       text: `Your OTP is ${otp}`,
+//     };
+
+//     await transporter.sendMail(mailOptions);
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "OTP sent successfully",
+//     });
+//   } catch (error) {
+//     console.error("Send OTP error:", error.message);
+
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to send OTP",
+//     });
+//   }
+// };

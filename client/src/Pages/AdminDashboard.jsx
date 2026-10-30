@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../Context/AuthContext';
 import api from '../Utils/axios';
 import { useNavigate } from 'react-router-dom';
+import toast, { Toaster } from 'react-hot-toast';
 
 const AdminDashboard = () => {
     const { user } = useContext(AuthContext);
@@ -23,71 +24,86 @@ const AdminDashboard = () => {
         fetchData();
     }, [user, navigate]);
 
-    // const fetchData = async () => {
-    //     try {
-    //         const [eventsRes, bookingsRes] = await Promise.all([
-    //             api.get('/events'),
-    //             api.get('/bookings/my') // Admin gets all bookings
-    //         ]);
-    //         setEvents(eventsRes.data);
-    //         setBookings(bookingsRes.data);
-    //     } catch (error) {
-    //         console.error('Error fetching admin data', error);
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // };
-
-
     const fetchData = async () => {
-    try {
-        const [eventsRes, bookingsRes] = await Promise.all([
-            api.get('/events'),
-            api.get('/bookings/my')
-        ]);
+        try {
+            const [eventsRes, bookingsRes] = await Promise.all([
+                api.get('/events'),
+                api.get('/bookings/my')
+            ]);
 
-        setEvents(eventsRes.data);
-        setBookings(bookingsRes.data);
+            setEvents(eventsRes.data);
+            setBookings(bookingsRes.data);
 
-    } catch (error) {
-        console.error(
-            'Status:',
-            error.response?.status
-        );
+        } catch (error) {
+            console.error('Error fetching admin data:', error.response?.data || error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        console.error(
-            'Backend message:',
-            error.response?.data
-        );
-    } finally {
-        setLoading(false);
-    }
-};
+
+
+
+
 
     const handleCreateEvent = async (e) => {
         e.preventDefault();
+
         try {
-            await api.post('/events', formData, {headers: {
-                Authorization: `Bearer ${userInfo?.token}`
-            }});
+            const token = localStorage.getItem('token');
+            console.log("Token available:", !!token);
+
+            const response = await api.post('/events', formData, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+
             setShowEventForm(false);
-            setFormData({ title: '', description: '', date: '', location: '', category: '', totalSeats: '', ticketPrice: '', image: '' });
+
+            setFormData({
+                title: '',
+                description: '',
+                date: '',
+                location: '',
+                category: '',
+                totalSeats: '',
+                ticketPrice: '',
+                image: ''
+            });
+
+            if (response.data.success) {
+                toast.success(response.data.message);
+            }
             fetchData();
+
         } catch (error) {
-            alert(error.response?.data?.message || 'Error creating event');
+            console.error("Create event error:", error.response?.data || error.message);
+            console.error("Status:", error.response?.status);
+
+            alert(
+                error.response?.data?.message ||
+                error.message ||
+                'Error creating event'
+            );
         }
     };
+
 
     const handleDeleteEvent = async (id) => {
         if (window.confirm('Are you sure you want to delete this event?')) {
             try {
                 await api.delete(`/events/${id}`);
                 fetchData();
+                toast.success("delete Event successfully")
             } catch (error) {
                 alert('Error deleting event');
             }
         }
     };
+
+
 
     const handleConfirmBooking = async (id, paymentStatus) => {
         try {

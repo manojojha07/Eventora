@@ -3,64 +3,37 @@
 
 
 
-import jwt from 'jsonwebtoken';
-import User from '../models/userModel.js';
-
-// User authentication middleware
+import jwt  from 'jsonwebtoken';
+import User from '../models/userModel.js'
 export const protect = async (req, res, next) => {
-    try {
-        const authHeader = req.headers.authorization;
-
-        // Check if token exists
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({
-                success: false,
-                message: 'Not authorized, no token'
-            });
+    let token = req.headers.authorization;
+    if (token && token.startsWith('Bearer')) {
+        try {
+            token = token.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.user = await User.findById(decoded.id).select('-password');
+            if (!req.user) {
+                return res.status(401).json({ message: 'Not authorized, user not found' });
+            }
+            next();
+        } catch (error) {
+            res.status(401).json({ message: 'Not authorized, token failed' });
         }
-
-        // Extract JWT from "Bearer <token>"
-        const token = authHeader.split(' ')[1];
-
-        // Verify token
-        const decoded = jwt.verify(
-            token,
-            process.env.JWT_SECRET
-        );
-
-        // Find authenticated user
-        req.user = await User.findById(decoded.id).select('-password');
-
-        if (!req.user) {
-            return res.status(401).json({
-                success: false,
-                message: 'Not authorized, user not found'
-            });
-        }
-
-        next();
-
-    } catch (error) {
-        console.error('Authentication error:', error.message);
-
-        return res.status(401).json({
-            success: false,
-            message: 'Not authorized, token failed'
-        });
+    } else {
+        res.status(401).json({ message: 'Not authorized, no token' });
     }
 };
 
-// Admin authorization middleware
 export const admin = (req, res, next) => {
     if (req.user && req.user.role === 'admin') {
-        return next();
+        next();
+    } else {
+        res.status(403).json({ message: 'Not authorized as an admin' });
     }
-
-    return res.status(403).json({
-        success: false,
-        message: 'Forbidden, admin access required'
-    });
 };
+
+
+
 
 
 
